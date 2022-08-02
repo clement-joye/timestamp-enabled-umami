@@ -65,16 +65,16 @@ export default async (req, res) => {
 
   const { type, payload } = getJsonBody(req);
 
-  let { url, referrer, event_type, event_value } = payload;
+  let { url, referrer, event_type, event_value, created_at } = payload;
 
   if (process.env.REMOVE_TRAILING_SLASH) {
     url = removeTrailingSlash(url);
   }
 
   if (type === 'pageview') {
-    await savePageView(website_id, { session_id, session_uuid, url, referrer });
+    await savePageView(website_id, { session_id, session_uuid, url, referrer, created_at });
   } else if (type === 'event') {
-    await saveEvent(website_id, { session_id, session_uuid, url, event_type, event_value });
+    await saveEvent(website_id, { session_id, session_uuid, url, event_type, event_value, created_at });
   } else {
     return badRequest(res);
   }
