@@ -4,6 +4,38 @@ export const config = {
   matcher: '/:path*',
 };
 
+const frequency = 60 * 1000;
+const timeout = process.env.UMAMI_TIMEOUT ? parseInt(process.env.UMAMI_TIMEOUT) : 600 ;
+const functionAppUrl = process.env.FUNCTION_APP_URL;
+let lastReqDateTime = Date.now();
+
+function verifyIdle() {
+  let now = Date.now();
+  let diff = Math.abs(now - lastReqDateTime) / 1000;
+  
+  console.log(`[Idle] Last request was ${diff} seconds ago.`);
+  
+  if(diff < timeout) {
+    setTimeout(() => verifyIdle(), frequency);
+    return;
+  }
+  
+  console.log(`[Idle] Timeout exceeded.`);
+
+  if(!functionAppUrl) {
+    process.exit(0);
+  }
+
+  fetch(functionAppUrl)
+    .then((res) => {
+      console.log("[Idle] " + res.status);
+      process.exit(0);
+    }
+  );
+}
+
+setTimeout(() => verifyIdle(), frequency);
+
 function customCollectEndpoint(req) {
   const collectEndpoint = process.env.COLLECT_API_ENDPOINT;
 
@@ -50,6 +82,8 @@ export default function middleware(req) {
       return res;
     }
   }
+
+  lastReqDateTime = Date.now();
 
   return forceSSL(req, NextResponse.next());
 }
