@@ -14,10 +14,11 @@ export async function saveEvent(...args) {
   });
 }
 
-async function relationalQuery(website_id, { session_id, url, event_type, event_value }) {
+async function relationalQuery(website_id, { session_id, url, event_type, event_value, created_at }) {
   return runQuery(
     prisma.event.create({
       data: {
+        created_at,
         website_id,
         session_id,
         url: url?.substr(0, URL_LENGTH),
@@ -28,8 +29,9 @@ async function relationalQuery(website_id, { session_id, url, event_type, event_
   );
 }
 
-async function clickhouseQuery(website_id, { session_uuid, url, event_type, event_value }) {
+async function clickhouseQuery(website_id, { session_uuid, url, event_type, event_value, created_at }) {
   const params = [
+    created_at,
     website_id,
     session_uuid,
     url?.substr(0, URL_LENGTH),
@@ -40,7 +42,7 @@ async function clickhouseQuery(website_id, { session_uuid, url, event_type, even
   return rawQueryClickhouse(
     `
     insert into umami_dev.event (created_at, website_id, session_uuid, url, event_type, event_value)
-    values (${getDateFormatClickhouse(new Date())},  $1, $2, $3, $4, $5);`,
+    values ($0, $1, $2, $3, $4, $5);`,
     params,
   );
 }
